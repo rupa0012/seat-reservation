@@ -1,6 +1,6 @@
 # WRITEUP
 
-Live URL: `https://<YOUR-SERVICE>.onrender.com` · Repo: https://github.com/rupa0012/seat-reservation
+Live URL: `https://seat-reservation-ig71.onrender.com` · Repo: https://github.com/rupa0012/seat-reservation
 
 ## 1. How a seat is never sold twice (the atomic mechanism)
 
@@ -91,7 +91,7 @@ Debugging path: take the `X-Request-Id` from the failing response, grep it in th
 
 I used an AI assistant (Claude) heavily, as the assignment allowed. To be clear about who did what:
 
-**What I directed / decided myself:** *(rewrite this in your own words, with true specifics)*
+**What I directed / decided myself:** 
 - Picked the scope and the stack with the assistant's options in front of me (Python/FastAPI + Postgres on Docker, Render for hosting).
 - Decided how to deploy, installed Docker and fixed my Windows virtualization/WSL problem myself.
 - Ran the burst tests on my machine, read the output and reported the failures back.
@@ -105,10 +105,7 @@ I used an AI assistant (Claude) heavily, as the assignment allowed. To be clear 
 - The first full-size burst stalled: my load client, not the server, was the bottleneck (thousands of tasks queued inside the HTTP client). Fixed by bounding in-flight requests.
 - A one-off connection reset during a run led to raising the server keep-alive timeout to 75 s.
 - The AI could not run the Python code in its own sandbox (no package access), so the SQL logic was tested directly with `psql`/`pgbench`, and the first end-to-end Python run was on my machine.
-- I have **not** yet seen the full 20,000-request burst finish on my laptop; the medium run passed all checks. *(update with your final live-run numbers)*
-
-**What I can explain without the AI:** *(be truthful: only keep what is true after you re-read the code)* the conditional UPDATE, why seats are locked in sorted order,
-the advisory lock, why the idempotency row commits with the booking, `/health` vs `/ready`.
+- I have **not** yet seen the full 20,000-request burst finish on my laptop; the medium run passed all checks. *
 
 ## 7. Next steps (not done)
 
