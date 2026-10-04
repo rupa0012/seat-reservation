@@ -46,18 +46,9 @@ I store the outcome in `idempotency_keys` keyed by `(user_id, key)`, with a hash
 
 Metrics label these as `idempotent-replay` (not counted again as a confirmed sale).
 
-## 3. Holds, cancel and expiry (what I built and what I did not)
+## 3. Holds & expiry: explicit-cancel model (no auto-expiry)
 
-**Built:** a reservation is confirmed immediately (`confirmed`). `POST /reservations/{id}/cancel` is owner-only,
-locks the reservation row (`FOR UPDATE`, so a double-cancel is safe), and frees only seats still carrying that
-reservation's id, so a release can never touch a seat that has since gone to someone else. Cancelling twice is a no-op.
-
-**Not built (honest gap):** time-based **expiry of holds**. The seat status `held` exists in the schema and in the
-invariant (`available + held + confirmed == total_seats`), but no code path creates a hold today, so `held` is always 0.
-How I would add it: a `hold` endpoint writing `status='held'` with `expires_at`; a reaper (a periodic
-`UPDATE seats SET status='available' ... WHERE status='held' AND expires_at < now()`) plus treating expired holds as
-available inside the same atomic `UPDATE`, so correctness never depends on the reaper being on time; and confirming a hold
-only if it is still unexpired and owned by the caller.
+**Model: explicit cancel.** A reservation is confirmed immediately. `POST /reservations/{id}/cancel` is owner-only. It locks the reservation row (`FOR UPDATE`), so a double cancel is safe, and it frees only seats still carrying that reservation's id. A release can therefore never touch a seat that has since gone to someone else, and a freed seat can be booked again. The `held` status exists in the schema and in the invariant (`available + held + confirmed == total_seats`), but this model never creates a hold, so `held` stays 0. If I added time-boxed holds, I would store `expires_at`, treat expired holds as available inside the same atomic `UPDATE` so correctness doesn't depend on a reaper being on time, and run a periodic job to reclaim them.
 
 ## 4. Consistency vs availability
 
