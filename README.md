@@ -6,7 +6,7 @@ even when thousands of requests arrive at the same moment.
 - Stack: Python 3.12, FastAPI, PostgreSQL 16, psycopg 3 (async, pooled), Prometheus metrics
 - Design notes, trade-offs and honest AI-usage disclosure: see [WRITEUP.md](WRITEUP.md)
 
-**Live URL:** `https://<YOUR-SERVICE>.onrender.com`  (fill in)
+**Live URL:** `https://seat-reservation-ig71.onrender.com` 
 Free tier sleeps when idle: the first request after a quiet period can take up to ~1 minute
 while the service wakes up. Check `/ready` and wait for `{"status":"ready"}`.
 
@@ -26,7 +26,7 @@ Creates a fresh show, hammers it, reconciles, prints PASS/FAIL (exit code 1 on f
 
 Against the live service (needs `pip install httpx`):
 
-    python scripts/burst.py https://<YOUR-SERVICE>.onrender.com --admin-token <ADMIN_TOKEN>
+    python scripts/burst.py https://seat-reservation-ig71.onrender.com --admin-token <ADMIN_TOKEN>
 
 Useful flags: `--requests 15000 --concurrency 500 --seats 1000 --users 3000 --hot-seats 5 --hot-users 400`.
 Lower `--requests` / `--concurrency` for small hosts.
