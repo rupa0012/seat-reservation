@@ -10,6 +10,7 @@ from typing import Annotated, Optional
 
 import psycopg
 from fastapi import Depends, FastAPI, Header, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
@@ -165,16 +166,20 @@ async def _unexpected(_: Request, exc: Exception):
 _USER_RE = re.compile(r"[A-Za-z0-9_.:@-]{1,64}")
 
 
-def _bearer(authorization: Optional[str]) -> Optional[str]:
-    if not authorization:
+# Declaring the scheme with HTTPBearer makes Swagger UI (/docs) show an "Authorize" button.
+# (Swagger UI silently drops a plain header parameter named "Authorization".)
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _bearer(creds: Optional[HTTPAuthorizationCredentials]) -> Optional[str]:
+    if creds is None or creds.scheme.lower() != "bearer":
         return None
-    scheme, _, token = authorization.partition(" ")
-    token = token.strip()
-    return token if scheme.lower() == "bearer" and token else None
+    token = creds.credentials.strip()
+    return token or None
 
 
-def get_user(authorization: Annotated[Optional[str], Header()] = None) -> str:
-    token = _bearer(authorization)
+def get_user(creds: Annotated[Optional[HTTPAuthorizationCredentials], Depends(_bearer_scheme)] = None) -> str:
+    token = _bearer(creds)
     unauthorized = ApiError(401, "unauthorized", "send 'Authorization: Bearer <token>'", {"WWW-Authenticate": "Bearer"})
     if token is None or not _USER_RE.fullmatch(token):
         raise unauthorized
@@ -184,8 +189,8 @@ def get_user(authorization: Annotated[Optional[str], Header()] = None) -> str:
     return token
 
 
-def require_admin(authorization: Annotated[Optional[str], Header()] = None) -> None:
-    token = _bearer(authorization)
+def require_admin(creds: Annotated[Optional[HTTPAuthorizationCredentials], Depends(_bearer_scheme)] = None) -> None:
+    token = _bearer(creds)
     if token is None:
         raise ApiError(401, "unauthorized", "admin token required", {"WWW-Authenticate": "Bearer"})
     if not hmac.compare_digest(token, config.ADMIN_TOKEN):
